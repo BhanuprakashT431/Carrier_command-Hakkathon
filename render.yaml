@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: career-command-center
+    env: node
+    buildCommand: "cd frontend && npm install && npm run build && cd ../backend && npm install && npx prisma generate"
+    startCommand: "cd backend && npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        value: "postgresql://user:pass@host:5432/db" # REPLACE with real DB in Render dashboard
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: DEMO_MODE
+        value: "true"
+      - key: CORS_ORIGINS
+        # After deployment, change this in Render dashboard to your actual URL
+        value: "http://localhost:5173"
