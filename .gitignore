@@ -1,0 +1,112 @@
+# .gitignore for the Secure AI Career Command Center monorepo
+
+# ============================================================
+# Environment files — NEVER commit these
+# ============================================================
+.env
+.env.local
+.env.*.local
+backend/.env
+agents/.env
+frontend/.env
+
+# ============================================================
+# Node.js
+# ============================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+dist/
+build/
+.cache/
+
+# ============================================================
+# Vite
+# ============================================================
+frontend/dist/
+frontend/.vite/
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+agents/venv/
+agents/.venv/
+agents/__pycache__/
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ============================================================
+# Prisma
+# ============================================================
+# Keep schema and migrations, ignore generated client
+# backend/node_modules/.prisma is already covered above
+
+# ============================================================
+# Uploads (user files — never commit)
+# ============================================================
+backend/uploads/
+backend/test-uploads/
+agents/uploads/
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+backend/logs/
+agents/logs/
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# ============================================================
+# IDE
+# ============================================================
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# ============================================================
+# Docker
+# ============================================================
+# Keep docker-compose.yml committed
+# Ignore override files with secrets
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# ============================================================
+# Testing
+# ============================================================
+coverage/
+.nyc_output/
+jest-results.xml
+
+# ============================================================
+# Misc
+# ============================================================
+*.pem
+*.key
+*.cert
+*.db
+*.db-journal

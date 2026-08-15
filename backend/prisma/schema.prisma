@@ -1,0 +1,714 @@
+// This is the full Prisma schema for the Secure AI Career Command Center.
+// Migrated to SQLite for local dev — no external DB server required.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============================================================
+// ENTITY 1: User — Core identity and auth
+// ============================================================
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("USER")
+  isActive     Boolean   @default(true)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  profile              Profile?
+  refreshTokens        RefreshToken[]
+  analyses             Analysis[]
+  jobApplications      JobApplication[]
+  progress             Progress[]
+  auditLogs            AuditLog[]
+  simulations          Simulation[]
+  copilotConversations CopilotConversation[]
+  progressSnapshots    ProgressSnapshot[]
+  learningMilestones   LearningMilestone[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================================
+// ENTITY 2: RefreshToken
+// ============================================================
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// ENTITY 3: Profile
+// ============================================================
+model Profile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName      String?
+  lastName       String?
+  bio            String?
+  phone          String?
+  linkedinUrl    String?
+  githubUrl      String?
+  portfolioUrl   String?
+  resumeUrl      String?
+  resumeText     String?
+  resumeFileName String?
+  location       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  education        Education[]
+  experiences      Experience[]
+  projects         Project[]
+  certifications   Certification[]
+  userSkills       UserSkill[]
+  careerPreference CareerPreference?
+  careerGoals      CareerGoal[]
+
+  @@map("profiles")
+}
+
+// ============================================================
+// ENTITY 4: Education
+// ============================================================
+model Education {
+  id             String   @id @default(cuid())
+  profileId      String
+  profile        Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  institution    String
+  degree         String
+  branch         String?
+  semester       String?
+  graduationYear Int?
+  gpa            Float?
+  createdAt      DateTime @default(now())
+
+  @@index([profileId])
+  @@map("education")
+}
+
+// ============================================================
+// ENTITY 5: Experience
+// ============================================================
+model Experience {
+  id           String    @id @default(cuid())
+  profileId    String
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  company      String
+  role         String
+  type         String
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean   @default(false)
+  description  String?
+  technologies String    @default("[]") // JSON array stored as string
+  createdAt    DateTime  @default(now())
+
+  @@index([profileId])
+  @@map("experiences")
+}
+
+// ============================================================
+// ENTITY 6: Project
+// ============================================================
+model Project {
+  id            String   @id @default(cuid())
+  profileId     String
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  technologies  String   @default("[]") // JSON array stored as string
+  role          String?
+  duration      String?
+  githubUrl     String?
+  deploymentUrl String?
+  difficulty    String?
+  outcome       String?
+  createdAt     DateTime @default(now())
+
+  @@index([profileId])
+  @@map("projects")
+}
+
+// ============================================================
+// ENTITY 7: Certification
+// ============================================================
+model Certification {
+  id             String    @id @default(cuid())
+  profileId      String
+  profile        Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name           String
+  issuer         String
+  issuedDate     DateTime?
+  expiryDate     DateTime?
+  credentialUrl  String?
+  relevantSkills String    @default("[]") // JSON array
+  createdAt      DateTime  @default(now())
+
+  @@index([profileId])
+  @@map("certifications")
+}
+
+// ============================================================
+// ENTITY 8: UserSkill
+// ============================================================
+model UserSkill {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  skillName   String
+  proficiency String   // BEGINNER | INTERMEDIATE | ADVANCED | EXPERT
+  confidence  Int
+  isVerified  Boolean  @default(false)
+  verifiedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([profileId, skillName])
+  @@index([profileId])
+  @@map("user_skills")
+}
+
+// ============================================================
+// ENTITY 9: CareerPreference
+// ============================================================
+model CareerPreference {
+  id                 String   @id @default(cuid())
+  profileId          String   @unique
+  profile            Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  interestedRoles    String   @default("[]") // JSON array
+  industries         String   @default("[]")
+  salaryExpectation  Int?
+  preferredLocations String   @default("[]")
+  remotePreference   String?
+  higherStudies      Boolean  @default(false)
+  companyType        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("career_preferences")
+}
+
+// ============================================================
+// ENTITY 10: CareerGoal
+// ============================================================
+model CareerGoal {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  timeframe String
+  goal      String
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@map("career_goals")
+}
+
+// ============================================================
+// ENTITY 11: Career
+// ============================================================
+model Career {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  slug           String   @unique
+  description    String
+  category       String
+  requiredSkills String   // JSON
+  avgSalaryMin   Int?
+  avgSalaryMax   Int?
+  growthRate     String?
+  automationRisk Float?
+  demandLevel    String?
+  source         String?
+  sourceDate     String?
+  dataMode       String   @default("CURATED")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@map("careers")
+}
+
+// ============================================================
+// ENTITY 12: Analysis
+// ============================================================
+model Analysis {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String   @default("PENDING")
+  dataMode     String   @default("DEMO")
+  currentPhase String?
+  currentAgent String?
+  progress     Int      @default(0)
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  completedAt  DateTime?
+
+  simulations    Simulation[]
+  agentRuns      AgentRun[]
+  careerDecision CareerDecision?
+  skillGaps      SkillGap[]
+  stressTest     StressTest?
+  riskAssessment RiskAssessment?
+  evidence       Evidence[]
+  evalMetrics    EvalMetrics?
+  learningPlan   LearningPlan?
+  auditLogs      AuditLog[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("analyses")
+}
+
+// ============================================================
+// ENTITY 13: AgentRun
+// ============================================================
+model AgentRun {
+  id               String   @id @default(cuid())
+  analysisId       String
+  analysis         Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  agentName        String
+  agentVersion     String   @default("1.0")
+  status           String
+  phase            Int
+  inputSummary     String?
+  outputJson       String?  // JSON stored as string
+  confidence       Float?
+  evidenceStrength String?
+  dataMode         String   @default("DEMO")
+  latencyMs        Int?
+  modelUsed        String?
+  toolsUsed        String   @default("[]") // JSON array
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@index([analysisId])
+  @@index([agentName])
+  @@map("agent_runs")
+}
+
+// ============================================================
+// ENTITY 14: CareerDecision
+// ============================================================
+model CareerDecision {
+  id                   String   @id @default(cuid())
+  analysisId           String   @unique
+  analysis             Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  career               String
+  suitabilityScore     Float
+  stressAdjustedScore  Float
+  riskScore            Float
+  stressTestRobustness Float
+  stabilityScore       Float
+  overallConfidence    Float
+  unsupportedClaimRate Float
+  evidenceCoverage     Float
+  agentAgreementRate   Float
+  dataMode             String   @default("DEMO")
+  scoreDisclaimer      String   @default("System-generated decision-support metrics based on configured scoring formulas. Not scientific probability assessments.")
+  strengths            String   @default("[]") // JSON
+  skillGaps            String   @default("[]")
+  risks                String   @default("[]")
+  evidence             String   @default("[]")
+  alternativeCareers   String   @default("[]")
+  stressTestResults    String   @default("[]")
+  agentDisagreements   String   @default("[]")
+  assumptions          String   @default("[]")
+  uncertainties        String   @default("[]")
+  finalReasoning       String   @default("")
+  nextActions          String   @default("[]")
+  createdAt            DateTime @default(now())
+
+  @@map("career_decisions")
+}
+
+// ============================================================
+// ENTITY 15: SkillGap
+// ============================================================
+model SkillGap {
+  id            String   @id @default(cuid())
+  analysisId    String
+  analysis      Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  career        String
+  skillName     String
+  currentLevel  Float
+  requiredLevel Float
+  gapSize       Float
+  priority      String
+  difficulty    String?
+  dependency    String?
+  dataMode      String   @default("DEMO")
+  createdAt     DateTime @default(now())
+
+  @@index([analysisId])
+  @@map("skill_gaps")
+}
+
+// ============================================================
+// ENTITY 16: StressTest
+// ============================================================
+model StressTest {
+  id                  String   @id @default(cuid())
+  analysisId          String   @unique
+  analysis            Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  robustnessScore     Float
+  scenariosSurvived   Int
+  scenariosFailed     Int
+  scenariosPartial    Int
+  totalScenarios      Int      @default(10)
+  instabilityDetected Boolean  @default(false)
+  stabilityDelta      Float?
+  dataMode            String   @default("DEMO")
+  createdAt           DateTime @default(now())
+
+  scenarios StressScenario[]
+
+  @@map("stress_tests")
+}
+
+// ============================================================
+// ENTITY 17: StressScenario
+// ============================================================
+model StressScenario {
+  id           String     @id @default(cuid())
+  stressTestId String
+  stressTest   StressTest @relation(fields: [stressTestId], references: [id], onDelete: Cascade)
+  scenarioId   Int
+  name         String
+  description  String
+  result       String     // SURVIVED | PARTIAL | FAILED
+  impact       String
+  scoreDelta   Float
+  reasoning    String
+  createdAt    DateTime   @default(now())
+
+  @@index([stressTestId])
+  @@map("stress_scenarios")
+}
+
+// ============================================================
+// ENTITY 18: RiskAssessment
+// ============================================================
+model RiskAssessment {
+  id               String   @id @default(cuid())
+  analysisId       String   @unique
+  analysis         Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  career           String
+  overallRisk      String
+  riskScore        Float
+  automationRisk   Float?
+  marketVolatility Float?
+  entryCompetition Float?
+  skillObsolescence Float?
+  geographicLimit  Float?
+  factors          String   @default("[]") // JSON
+  mitigations      String   @default("[]")
+  dataMode         String   @default("DEMO")
+  createdAt        DateTime @default(now())
+
+  @@map("risk_assessments")
+}
+
+// ============================================================
+// ENTITY 19: Evidence
+// ============================================================
+model Evidence {
+  id          String   @id @default(cuid())
+  analysisId  String
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  agentName   String
+  claim       String
+  source      String?
+  sourceDate  String?
+  sourceType  String?
+  confidence  Float?
+  isSupported Boolean
+  dataMode    String   @default("DEMO")
+  createdAt   DateTime @default(now())
+
+  @@index([analysisId])
+  @@index([isSupported])
+  @@map("evidence")
+}
+
+// ============================================================
+// ENTITY 20: EvalMetrics
+// ============================================================
+model EvalMetrics {
+  id                   String   @id @default(cuid())
+  analysisId           String   @unique
+  analysis             Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  totalClaims          Int      @default(0)
+  supportedClaims      Int      @default(0)
+  unsupportedClaims    Int      @default(0)
+  unsupportedClaimRate Float    @default(0)
+  agentAgreementRate   Float    @default(1)
+  stressTestRobustness Float    @default(0)
+  stabilityScore       Float    @default(100)
+  avgAgentConfidence   Float    @default(0)
+  avgAgentLatencyMs    Int      @default(0)
+  agentDisagreements   String   @default("[]") // JSON
+  apiFailed            Boolean  @default(false)
+  usedDemoProvider     Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  @@map("eval_metrics")
+}
+
+// ============================================================
+// ENTITY 21: LearningPlan
+// ============================================================
+model LearningPlan {
+  id            String   @id @default(cuid())
+  analysisId    String   @unique
+  analysis      Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  career        String
+  day30Plan     String   @default("{}") // JSON
+  day60Plan     String   @default("{}")
+  day90Plan     String   @default("{}")
+  month6Plan    String   @default("{}")
+  resources     String   @default("[]")
+  totalDuration String?
+  dataMode      String   @default("DEMO")
+  createdAt     DateTime @default(now())
+
+  @@map("learning_plans")
+}
+
+// ============================================================
+// ENTITY 22: Progress
+// ============================================================
+model Progress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String    // SKILL | COURSE | PROJECT | CERTIFICATION | JOB_APPLICATION | INTERVIEW
+  itemId      String
+  itemName    String
+  status      String
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, type, itemId])
+  @@index([userId])
+  @@map("progress")
+}
+
+// ============================================================
+// ENTITY 23: JobApplication
+// ============================================================
+model JobApplication {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company        String
+  role           String
+  dateApplied    DateTime
+  status         String    @default("APPLIED")
+  jobUrl         String?
+  jobDescription String?
+  requiredSkills String    @default("[]") // JSON
+  notes          String?
+  salary         Int?
+  location       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("job_applications")
+}
+
+// ============================================================
+// ENTITY 24: AuditLog
+// ============================================================
+model AuditLog {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  analysisId String?
+  analysis   Analysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  action     String
+  resource   String?
+  details    String?   // JSON
+  ipAddress  String?
+  userAgent  String?
+  status     String
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([analysisId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// ENTITY 25: KnowledgeDocument
+// ============================================================
+model KnowledgeDocument {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  source      String
+  sourceDate  String
+  category    String
+  career      String?
+  skill       String?
+  reliability String
+  dataMode    String   @default("CURATED")
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([career])
+  @@index([skill])
+  @@map("knowledge_documents")
+}
+
+// ============================================================
+// ENTITY 26: Simulation
+// ============================================================
+model Simulation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseAnalysisId  String
+  analysis        Analysis @relation(fields: [baseAnalysisId], references: [id], onDelete: Cascade)
+  scenarioType    String
+  scenarioParams  String   @default("{}") // JSON
+  originalScores  String   @default("{}") // JSON
+  simulatedScores String   @default("{}")
+  rankingChanges  String   @default("[]")
+  dataMode        String   @default("DEMO")
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([baseAnalysisId])
+  @@map("simulations")
+}
+
+// ============================================================
+// ENTITY 27: CopilotConversation
+// ============================================================
+model CopilotConversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String    @default("Career Copilot")
+  dataMode  String    @default("DEMO")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  messages CopilotMessage[]
+
+  @@index([userId])
+  @@map("copilot_conversations")
+}
+
+// ============================================================
+// ENTITY 28: CopilotMessage
+// ============================================================
+model CopilotMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   CopilotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  intent         String?
+  toolsUsed      String   @default("[]")
+  dataUsed       String   @default("[]")
+  recommendations String  @default("[]")
+  actions        String   @default("[]")
+  evidence       String   @default("[]")
+  confidence     Float    @default(0)
+  dataMode       String   @default("DEMO")
+  limitations    String   @default("[]")
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+  @@map("copilot_messages")
+}
+
+// ============================================================
+// ENTITY 29: ProgressSnapshot
+// ============================================================
+model ProgressSnapshot {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshotDate        DateTime @default(now())
+  skills              String   @default("[]") // JSON
+  careerReadiness     Float
+  topCareer           String?
+  suitabilityScore    Float?
+  stressAdjustedScore Float?
+  robustnessScore     Float?
+  rankingSnapshot     String   @default("[]")
+  skillCoverage       Float    @default(0)
+  learningProgress    Float    @default(0)
+  projectEvidence     Float    @default(0)
+  certEvidence        Float    @default(0)
+  experienceFactor    Float    @default(0)
+  dataMode            String   @default("DEMO")
+  scoreDisclaimer     String   @default("System-generated career readiness score — not scientific probability.")
+  createdAt           DateTime @default(now())
+
+  @@index([userId])
+  @@index([snapshotDate])
+  @@map("progress_snapshots")
+}
+
+// ============================================================
+// ENTITY 30: LearningMilestone
+// ============================================================
+model LearningMilestone {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisId  String?
+  career      String?
+  skill       String?
+  title       String
+  description String?
+  durationDays Int      @default(7)
+  phase       Int       @default(30)
+  priority    String    @default("MEDIUM")
+  status      String    @default("PLANNED")
+  startedAt   DateTime?
+  completedAt DateTime?
+  skippedAt   DateTime?
+  notes       String?
+  evidenceUrl String?
+  completionEvidence String @default("{}") // JSON
+  dataMode    String    @default("DEMO")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([career])
+  @@map("learning_milestones")
+}

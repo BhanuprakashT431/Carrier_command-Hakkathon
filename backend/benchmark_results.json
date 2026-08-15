@@ -1,0 +1,98 @@
+{
+  "A": {
+    "executionTimeMs": 397,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "B": {
+    "executionTimeMs": 98,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "C": {
+    "executionTimeMs": 102,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "D": {
+    "executionTimeMs": 102,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "E": {
+    "executionTimeMs": 83,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "F": {
+    "executionTimeMs": 108,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "G": {
+    "executionTimeMs": 118,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  },
+  "H": {
+    "executionTimeMs": 90,
+    "stability": "STABLE",
+    "evidence": {
+      "verified": 0,
+      "unsupported": 0,
+      "synthetic": 0
+    },
+    "provider": "DemoProvider",
+    "fallbackOccurred": false,
+    "safetyFailed": false
+  }
+}
