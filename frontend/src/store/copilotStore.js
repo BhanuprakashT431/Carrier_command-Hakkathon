@@ -8,10 +8,30 @@ const useCopilotStore = create((set, get) => ({
   loading: false,
   error: null,
   suggestedQuestions: {
-    Career: ["Why was this career recommended?", "Which career is most robust for me?", "How did stress testing change my recommendation?"],
-    Learning: ["What should I study today?", "Which skill should I learn next?", "What project should I build next?"],
-    Simulation: ["What if I improve Python to 80?", "What happens if I reduce learning time?", "Would MLOps improve my AI Engineer score?"],
-    Progress: ["How much progress have I made?", "Am I closer to my target career?", "What should I focus on next?"]
+    Career: [
+      "Why was this career path recommended for me?",
+      "Which career is the most robust against AI automation?",
+      "How did the adversarial stress-test change my recommendation?",
+      "What are the top 3 high-impact skills I need right now?"
+    ],
+    Learning: [
+      "What should be my learning focus for the next 30 days?",
+      "Which skill should I prioritize to close my largest gap?",
+      "What portfolio project would prove my competency best?",
+      "Can you break down my 6-month roadmap into weekly milestones?"
+    ],
+    Simulation: [
+      "What if I improve my core technical skill level to 85%?",
+      "What happens if market demand drops by 30%?",
+      "Would learning MLOps boost my AI Engineer suitability score?",
+      "How does reducing learning time to 5 hrs/week impact my timeline?"
+    ],
+    Progress: [
+      "How much overall progress have I achieved so far?",
+      "Am I on track to meet my target role benchmarks?",
+      "Which verified evidence supports my career readiness?",
+      "What should be my immediate next milestone this week?"
+    ]
   },
 
   loadConversations: async () => {

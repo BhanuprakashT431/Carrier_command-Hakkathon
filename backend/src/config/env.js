@@ -48,7 +48,7 @@ const env = {
     .map((o) => o.trim()),
 
   // File upload
-  UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
+  UPLOAD_DIR: process.env.UPLOAD_DIR || (process.env.VERCEL ? '/tmp' : './uploads'),
   MAX_FILE_SIZE_MB: parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 10,
 
   // Agent service

@@ -78,25 +78,33 @@ class Orchestrator:
             context["risk_agent"] = risk_out.model_dump()
             agents_completed.append(self.risk_agent.agent_name)
 
-        # Phase 3
-        learning_out = await self.learning_agent.run(request, context)
-        context["learning_agent"] = learning_out.model_dump()
-        agents_completed.append(self.learning_agent.agent_name)
+        # Phase 3 (Parallel: Learning, Adversarial, Evidence all consume Phase 2 outputs)
+        phase3_tasks = [
+            self.learning_agent.run(request, context),
+            self.adversarial_agent.run(request, context),
+            self.evidence_agent.run(request, context)
+        ]
+        phase3_results = await asyncio.gather(*phase3_tasks, return_exceptions=True)
+        
+        learning_out = phase3_results[0] if not isinstance(phase3_results[0], Exception) else None
+        adv_out = phase3_results[1] if not isinstance(phase3_results[1], Exception) else None
+        evidence_out = phase3_results[2] if not isinstance(phase3_results[2], Exception) else None
 
-        # Phase 4
-        adv_out = await self.adversarial_agent.run(request, context)
-        context["adversarial_agent"] = adv_out.model_dump()
-        agents_completed.append(self.adversarial_agent.agent_name)
+        if learning_out:
+            context["learning_agent"] = learning_out.model_dump()
+            agents_completed.append(self.learning_agent.agent_name)
+        if adv_out:
+            context["adversarial_agent"] = adv_out.model_dump()
+            agents_completed.append(self.adversarial_agent.agent_name)
+        if evidence_out:
+            context["evidence_agent"] = evidence_out.model_dump()
+            agents_completed.append(self.evidence_agent.agent_name)
 
-        # Phase 5
-        evidence_out = await self.evidence_agent.run(request, context)
-        context["evidence_agent"] = evidence_out.model_dump()
-        agents_completed.append(self.evidence_agent.agent_name)
-
-        # Phase 6 & 7 (Comparison & final decision)
+        # Phase 4 (Comparison & final decision)
         comp_out = await self.comparison_agent.run(request, context)
-        context["comparison_agent"] = comp_out.model_dump()
-        agents_completed.append(self.comparison_agent.agent_name)
+        if comp_out:
+            context["comparison_agent"] = comp_out.model_dump()
+            agents_completed.append(self.comparison_agent.agent_name)
 
         original_score = career_out.final_score if career_out else 0.0
         

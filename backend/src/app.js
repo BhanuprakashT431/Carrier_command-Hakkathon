@@ -39,15 +39,17 @@ app.use(
 );
 
 // ============================================================
-// CORS — only allow configured origins
+// CORS — allow configured origins & Vercel deployment domains
 // ============================================================
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
+      // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
       if (!origin) return callback(null, true);
       // Allow any localhost origin during development
       if (origin.startsWith('http://localhost:')) return callback(null, true);
+      // Allow any vercel deployment
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
       if (env.CORS_ORIGINS.includes(origin)) return callback(null, true);
       
       logger.warn(`CORS rejected origin: ${origin}`);

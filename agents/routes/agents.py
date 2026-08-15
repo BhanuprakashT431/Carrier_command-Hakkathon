@@ -19,32 +19,85 @@ async def get_status(analysis_id: str):
 
 from schemas.agent_schemas import ResumeIntelligenceRequest, ResumeIntelligenceResponse
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 @router.post("/resume", response_model=ResumeIntelligenceResponse)
 async def analyze_resume(request: ResumeIntelligenceRequest, fastapi_req: Request):
     try:
         provider = fastapi_req.app.state.provider
         
-        # System prompt indicating resume intelligence
-        system_prompt = "You are a resume intelligence agent. Extract facts, infer strengths, and score the resume."
-        user_content = f"User ID: {request.user_id}\nResume Text:\n{request.resume_text}"
+        system_prompt = (
+            "You are an expert Resume Intelligence Agent in the Career Command Center platform. "
+            "Analyze the provided resume text thoroughly and extract REAL factual information from it. "
+            "Never invent fake or demo data if resume content is present. "
+            "Extract actual skills, education history, work experience, projects, certifications, and technologies directly mentioned in the resume. "
+            "Infer strengths, potential career alignments, and potential skill gaps based on the actual resume text. "
+            "Compute realistic evaluation scores between 0 and 100 for each dimension."
+        )
         
-        # Generate full schema for Gemini
-        response_schema = ResumeIntelligenceResponse.model_json_schema()
+        user_content = f"Resume Text to Analyze:\n{request.resume_text}"
+        
+        example_schema = {
+            "status": "success",
+            "data_mode": request.data_mode or "live",
+            "extracted_facts": {
+                "education": ["Degree, Major, Institution, Year"],
+                "skills": ["Skill 1", "Skill 2"],
+                "projects": ["Project Name - Description"],
+                "experience": ["Job Title at Company (Dates) - Description"],
+                "certifications": ["Certification Name"],
+                "achievements": ["Achievement or Award"],
+                "technologies": ["Tool / Tech 1", "Tech 2"]
+            },
+            "inferences": {
+                "strengths": ["Strength 1 based on resume"],
+                "potential_career_alignment": ["Target Role 1", "Target Role 2"],
+                "potential_skill_gaps": ["Skill gap for target roles"]
+            },
+            "scores": {
+                "technical_skills": 85,
+                "projects": 80,
+                "experience": 75,
+                "certifications": 70,
+                "achievements": 65,
+                "ats_compatibility": 88,
+                "career_alignment": 82,
+                "overall": 80
+            },
+            "missing_keywords": ["Keyword 1", "Keyword 2"],
+            "evidence": [{"claim": "Direct factual claim extracted from resume", "confidence": 0.95}],
+            "confidence": 0.92,
+            "uncertainties": [],
+            "score_disclaimer": "System-generated decision-support score. Not a scientific probability assessment."
+        }
         
         raw_response = await provider.generate(
             system_prompt=system_prompt,
             user_content=user_content,
-            response_schema=response_schema
+            response_schema=example_schema
         )
         
         import re
-        # Clean markdown code blocks if the model wrapped the JSON
         cleaned_response = re.sub(r'```(?:json)?\n?(.*?)\n?```', r'\1', raw_response, flags=re.DOTALL).strip()
         
+        # Extract JSON substring if surrounded by extra text
+        if '{' in cleaned_response and '}' in cleaned_response:
+            start = cleaned_response.find('{')
+            end = cleaned_response.rfind('}')
+            cleaned_response = cleaned_response[start:end+1]
+            
         parsed_response = json.loads(cleaned_response)
         
-        # Ensure it works for DemoProvider hack if needed, or just let Pydantic handle it
+        # Ensure status and data_mode are present
+        if 'status' not in parsed_response:
+            parsed_response['status'] = 'success'
+        if 'data_mode' not in parsed_response:
+            parsed_response['data_mode'] = request.data_mode or 'live'
+            
         return ResumeIntelligenceResponse(**parsed_response)
     except Exception as e:
+        logger.error(f"Error in analyze_resume: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
