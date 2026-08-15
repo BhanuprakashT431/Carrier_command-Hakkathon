@@ -42,7 +42,7 @@ class ComparisonService {
     }
 
     // The careers to compare must exist in the top alternativeCareers
-    const ranking = typeof dec.alternativeCareers === 'string' ? JSON.parse(dec.alternativeCareers || '[]') : (dec.alternativeCareers || []);
+    const ranking = dec.alternativeCareers || [];
     
     for (const career of careers) {
       const rankData = ranking.find(r => r.career === career);

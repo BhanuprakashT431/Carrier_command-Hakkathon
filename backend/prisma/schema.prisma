@@ -3,11 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================================
@@ -120,7 +121,7 @@ model Experience {
   endDate      DateTime?
   isCurrent    Boolean   @default(false)
   description  String?
-  technologies String    @default("[]") // JSON array stored as string
+  technologies String[]  @default([])
   createdAt    DateTime  @default(now())
 
   @@index([profileId])
@@ -161,7 +162,7 @@ model Certification {
   issuedDate     DateTime?
   expiryDate     DateTime?
   credentialUrl  String?
-  relevantSkills String    @default("[]") // JSON array
+  relevantSkills String[]  @default([])
   createdAt      DateTime  @default(now())
 
   @@index([profileId])
@@ -195,10 +196,10 @@ model CareerPreference {
   id                 String   @id @default(cuid())
   profileId          String   @unique
   profile            Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  interestedRoles    String   @default("[]") // JSON array
-  industries         String   @default("[]")
+  interestedRoles    String[] @default([])
+  industries         String[] @default([])
   salaryExpectation  Int?
-  preferredLocations String   @default("[]")
+  preferredLocations String[] @default([])
   remotePreference   String?
   higherStudies      Boolean  @default(false)
   companyType        String?
@@ -294,13 +295,13 @@ model AgentRun {
   status           String
   phase            Int
   inputSummary     String?
-  outputJson       String?  // JSON stored as string
+  outputJson       Json?
   confidence       Float?
   evidenceStrength String?
   dataMode         String   @default("DEMO")
   latencyMs        Int?
   modelUsed        String?
-  toolsUsed        String   @default("[]") // JSON array
+  toolsUsed        String[] @default([])
   errorMessage     String?
   createdAt        DateTime @default(now())
 
@@ -328,17 +329,17 @@ model CareerDecision {
   agentAgreementRate   Float
   dataMode             String   @default("DEMO")
   scoreDisclaimer      String   @default("System-generated decision-support metrics based on configured scoring formulas. Not scientific probability assessments.")
-  strengths            String   @default("[]") // JSON
-  skillGaps            String   @default("[]")
-  risks                String   @default("[]")
-  evidence             String   @default("[]")
-  alternativeCareers   String   @default("[]")
-  stressTestResults    String   @default("[]")
-  agentDisagreements   String   @default("[]")
-  assumptions          String   @default("[]")
-  uncertainties        String   @default("[]")
+  strengths            Json     @default("[]")
+  skillGaps            Json     @default("[]")
+  risks                Json     @default("[]")
+  evidence             Json     @default("[]")
+  alternativeCareers   Json     @default("[]")
+  stressTestResults    Json     @default("[]")
+  agentDisagreements   Json     @default("[]")
+  assumptions          Json     @default("[]")
+  uncertainties        Json     @default("[]")
   finalReasoning       String   @default("")
-  nextActions          String   @default("[]")
+  nextActions          Json     @default("[]")
   createdAt            DateTime @default(now())
 
   @@map("career_decisions")
@@ -423,8 +424,8 @@ model RiskAssessment {
   entryCompetition Float?
   skillObsolescence Float?
   geographicLimit  Float?
-  factors          String   @default("[]") // JSON
-  mitigations      String   @default("[]")
+  factors          Json     @default("[]")
+  mitigations      Json     @default("[]")
   dataMode         String   @default("DEMO")
   createdAt        DateTime @default(now())
 
@@ -469,7 +470,7 @@ model EvalMetrics {
   stabilityScore       Float    @default(100)
   avgAgentConfidence   Float    @default(0)
   avgAgentLatencyMs    Int      @default(0)
-  agentDisagreements   String   @default("[]") // JSON
+  agentDisagreements   Json     @default("[]") // JSON
   apiFailed            Boolean  @default(false)
   usedDemoProvider     Boolean  @default(true)
   createdAt            DateTime @default(now())
@@ -485,11 +486,11 @@ model LearningPlan {
   analysisId    String   @unique
   analysis      Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
   career        String
-  day30Plan     String   @default("{}") // JSON
-  day60Plan     String   @default("{}")
-  day90Plan     String   @default("{}")
-  month6Plan    String   @default("{}")
-  resources     String   @default("[]")
+  day30Plan     Json     @default("{}")
+  day60Plan     Json     @default("{}")
+  day90Plan     Json     @default("{}")
+  month6Plan    Json     @default("{}")
+  resources     Json     @default("[]")
   totalDuration String?
   dataMode      String   @default("DEMO")
   createdAt     DateTime @default(now())
@@ -531,7 +532,7 @@ model JobApplication {
   status         String    @default("APPLIED")
   jobUrl         String?
   jobDescription String?
-  requiredSkills String    @default("[]") // JSON
+  requiredSkills String[]  @default([])
   notes          String?
   salary         Int?
   location       String?
@@ -553,7 +554,7 @@ model AuditLog {
   analysis   Analysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
   action     String
   resource   String?
-  details    String?   // JSON
+  details    Json?
   ipAddress  String?
   userAgent  String?
   status     String
@@ -598,10 +599,10 @@ model Simulation {
   baseAnalysisId  String
   analysis        Analysis @relation(fields: [baseAnalysisId], references: [id], onDelete: Cascade)
   scenarioType    String
-  scenarioParams  String   @default("{}") // JSON
-  originalScores  String   @default("{}") // JSON
-  simulatedScores String   @default("{}")
-  rankingChanges  String   @default("[]")
+  scenarioParams  Json     @default("{}")
+  originalScores  Json     @default("{}")
+  simulatedScores Json     @default("{}")
+  rankingChanges  Json     @default("[]")
   dataMode        String   @default("DEMO")
   createdAt       DateTime @default(now())
 
@@ -638,14 +639,14 @@ model CopilotMessage {
   role           String
   content        String
   intent         String?
-  toolsUsed      String   @default("[]")
-  dataUsed       String   @default("[]")
-  recommendations String  @default("[]")
-  actions        String   @default("[]")
+  toolsUsed      String[] @default([])
+  dataUsed       Json     @default("[]")
+  recommendations Json     @default("[]")
+  actions        Json     @default("[]")
   evidence       String   @default("[]")
   confidence     Float    @default(0)
   dataMode       String   @default("DEMO")
-  limitations    String   @default("[]")
+  limitations    Json     @default("[]")
   createdAt      DateTime @default(now())
 
   @@index([conversationId])
@@ -660,13 +661,13 @@ model ProgressSnapshot {
   userId              String
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   snapshotDate        DateTime @default(now())
-  skills              String   @default("[]") // JSON
+  skills              Json     @default("[]")
   careerReadiness     Float
   topCareer           String?
   suitabilityScore    Float?
   stressAdjustedScore Float?
   robustnessScore     Float?
-  rankingSnapshot     String   @default("[]")
+  rankingSnapshot     Json     @default("[]")
   skillCoverage       Float    @default(0)
   learningProgress    Float    @default(0)
   projectEvidence     Float    @default(0)
@@ -702,7 +703,7 @@ model LearningMilestone {
   skippedAt   DateTime?
   notes       String?
   evidenceUrl String?
-  completionEvidence String @default("{}") // JSON
+  completionEvidence Json     @default("{}")
   dataMode    String    @default("DEMO")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

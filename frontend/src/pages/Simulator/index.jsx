@@ -325,6 +325,7 @@ const Simulator = () => {
                         </div>
                       </div>
                     );
+                  }) : (
                     <div className="p-6 bg-surface-900 border border-surface-800 rounded-2xl text-center">
                       <p className="text-surface-400">No significant impacts found for this scenario.</p>
                     </div>

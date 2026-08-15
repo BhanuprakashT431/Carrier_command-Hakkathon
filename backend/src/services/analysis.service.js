@@ -39,7 +39,7 @@ class AnalysisService {
         action: 'ANALYSIS_STARTED',
         resource: 'analysis',
         status: 'SUCCESS',
-        details: JSON.stringify({ dataMode })
+        details: { dataMode }
       }
     });
 
@@ -140,7 +140,7 @@ class AnalysisService {
           agentName: agentName,
           status: run.status === 'success' ? 'COMPLETED' : (run.status === 'failed' ? 'FAILED' : 'COMPLETED'),
           phase: run.phase || 1,
-          outputJson: JSON.stringify(run.output || run),
+          outputJson: run.output || run,
           confidence: run.confidence || 0,
           dataMode: (run.data_mode || 'DEMO').toUpperCase(),
           latencyMs: run.processing_time_ms || 0
@@ -179,17 +179,17 @@ class AnalysisService {
           agentAgreementRate: top.agent_agreement_rate || 1,
           dataMode: (top.data_mode || 'DEMO').toUpperCase(),
           scoreDisclaimer: top.score_disclaimer || 'System-generated.',
-          strengths: JSON.stringify(profileAgent.inferences?.strengths || top.strengths || []),
-          skillGaps: JSON.stringify(top.skill_gaps || []),
-          risks: JSON.stringify(riskAgent.risks || top.risks || []),
-          evidence: JSON.stringify(evidenceAgent.verifications || top.evidence || []),
-          alternativeCareers: JSON.stringify(careerAgent.alternatives || top.alternatives || []),
-          stressTestResults: JSON.stringify(advAgent.scenarios || top.stress_tests || []),
-          agentDisagreements: JSON.stringify(top.agent_disagreements || []),
-          assumptions: JSON.stringify(top.assumptions || []),
-          uncertainties: JSON.stringify(top.uncertainties || []),
+          strengths: profileAgent.inferences?.strengths || top.strengths || [],
+          skillGaps: top.skill_gaps || [],
+          risks: riskAgent.risks || top.risks || [],
+          evidence: evidenceAgent.verifications || top.evidence || [],
+          alternativeCareers: careerAgent.alternatives || top.alternatives || [],
+          stressTestResults: advAgent.scenarios || top.stress_tests || [],
+          agentDisagreements: top.agent_disagreements || [],
+          assumptions: top.assumptions || [],
+          uncertainties: top.uncertainties || [],
           finalReasoning: top.final_reasoning || '',
-          nextActions: JSON.stringify(top.next_actions || [])
+          nextActions: top.next_actions || []
         }
       });
     }
@@ -218,8 +218,8 @@ class AnalysisService {
           career: risk_assessment.career || 'General',
           overallRisk: risk_assessment.overall_risk || 'MEDIUM',
           riskScore: risk_assessment.risk_score || 50,
-          factors: JSON.stringify(risk_assessment.factors || []),
-          mitigations: JSON.stringify(risk_assessment.mitigations || []),
+          factors: risk_assessment.factors || [],
+          mitigations: risk_assessment.mitigations || [],
           dataMode: risk_assessment.data_mode || 'DEMO'
         }
       });
@@ -232,11 +232,11 @@ class AnalysisService {
         data: {
           analysisId,
           career: learning_plan.career || 'General',
-          day30Plan: JSON.stringify(learning_plan.day30_plan || {}),
-          day60Plan: JSON.stringify(learning_plan.day60_plan || {}),
-          day90Plan: JSON.stringify(learning_plan.day90_plan || {}),
-          month6Plan: JSON.stringify(learning_plan.month6_plan || {}),
-          resources: JSON.stringify(learning_plan.resources || []),
+          day30Plan: learning_plan.day30_plan || {},
+          day60Plan: learning_plan.day60_plan || {},
+          day90Plan: learning_plan.day90_plan || {},
+          month6Plan: learning_plan.month6_plan || {},
+          resources: learning_plan.resources || [],
           totalDuration: learning_plan.total_duration || '6 months',
           dataMode: (learning_plan.data_mode || 'DEMO').toUpperCase()
         }

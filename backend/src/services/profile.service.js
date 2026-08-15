@@ -125,11 +125,11 @@ class ProfileService {
       const prefData = preferences || careerPreference;
       // Map frontend fields to DB fields if needed
       const mappedPref = {
-        interestedRoles: JSON.stringify(prefData.jobTitle ? [prefData.jobTitle] : (prefData.interestedRoles || [])),
-        preferredLocations: JSON.stringify(prefData.location ? [prefData.location] : (prefData.preferredLocations || [])),
+        interestedRoles: prefData.jobTitle ? [prefData.jobTitle] : (prefData.interestedRoles || []),
+        preferredLocations: prefData.location ? [prefData.location] : (prefData.preferredLocations || []),
         remotePreference: prefData.remote !== undefined ? (prefData.remote ? 'REMOTE' : 'ON_SITE') : prefData.remotePreference,
         salaryExpectation: prefData.salary ? Number(prefData.salary) : prefData.salaryExpectation,
-        industries: JSON.stringify(prefData.industries || []),
+        industries: prefData.industries || [],
       };
 
       await prisma.careerPreference.upsert({

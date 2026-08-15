@@ -1,30 +1,9 @@
--- CreateEnum
-CREATE TYPE "Role" AS ENUM ('USER', 'COUNSELOR', 'ADMIN');
-
--- CreateEnum
-CREATE TYPE "Proficiency" AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT');
-
--- CreateEnum
-CREATE TYPE "AnalysisStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED');
-
--- CreateEnum
-CREATE TYPE "DataMode" AS ENUM ('LIVE', 'DEMO', 'PUBLIC_DATA', 'CURATED');
-
--- CreateEnum
-CREATE TYPE "ScenarioResult" AS ENUM ('SURVIVED', 'PARTIAL', 'FAILED');
-
--- CreateEnum
-CREATE TYPE "ProgressType" AS ENUM ('SKILL', 'COURSE', 'PROJECT', 'CERTIFICATION', 'JOB_APPLICATION', 'INTERVIEW');
-
--- CreateEnum
-CREATE TYPE "ApplicationStatus" AS ENUM ('APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'REJECTED', 'WITHDRAWN');
-
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'USER',
+    "role" TEXT NOT NULL DEFAULT 'USER',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -92,7 +71,7 @@ CREATE TABLE "experiences" (
     "endDate" TIMESTAMP(3),
     "isCurrent" BOOLEAN NOT NULL DEFAULT false,
     "description" TEXT,
-    "technologies" TEXT[],
+    "technologies" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "experiences_pkey" PRIMARY KEY ("id")
@@ -104,7 +83,7 @@ CREATE TABLE "projects" (
     "profileId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "technologies" TEXT[],
+    "technologies" TEXT NOT NULL DEFAULT '[]',
     "role" TEXT,
     "duration" TEXT,
     "githubUrl" TEXT,
@@ -125,7 +104,7 @@ CREATE TABLE "certifications" (
     "issuedDate" TIMESTAMP(3),
     "expiryDate" TIMESTAMP(3),
     "credentialUrl" TEXT,
-    "relevantSkills" TEXT[],
+    "relevantSkills" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "certifications_pkey" PRIMARY KEY ("id")
@@ -136,7 +115,7 @@ CREATE TABLE "user_skills" (
     "id" TEXT NOT NULL,
     "profileId" TEXT NOT NULL,
     "skillName" TEXT NOT NULL,
-    "proficiency" "Proficiency" NOT NULL,
+    "proficiency" TEXT NOT NULL,
     "confidence" INTEGER NOT NULL,
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
     "verifiedBy" TEXT,
@@ -150,10 +129,10 @@ CREATE TABLE "user_skills" (
 CREATE TABLE "career_preferences" (
     "id" TEXT NOT NULL,
     "profileId" TEXT NOT NULL,
-    "interestedRoles" TEXT[],
-    "industries" TEXT[],
+    "interestedRoles" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "industries" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "salaryExpectation" INTEGER,
-    "preferredLocations" TEXT[],
+    "preferredLocations" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "remotePreference" TEXT,
     "higherStudies" BOOLEAN NOT NULL DEFAULT false,
     "companyType" TEXT,
@@ -181,7 +160,7 @@ CREATE TABLE "careers" (
     "slug" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "category" TEXT NOT NULL,
-    "requiredSkills" JSONB NOT NULL,
+    "requiredSkills" TEXT NOT NULL,
     "avgSalaryMin" INTEGER,
     "avgSalaryMax" INTEGER,
     "growthRate" TEXT,
@@ -189,7 +168,7 @@ CREATE TABLE "careers" (
     "demandLevel" TEXT,
     "source" TEXT,
     "sourceDate" TEXT,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'CURATED',
+    "dataMode" TEXT NOT NULL DEFAULT 'CURATED',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -201,8 +180,8 @@ CREATE TABLE "careers" (
 CREATE TABLE "analyses" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "status" "AnalysisStatus" NOT NULL DEFAULT 'PENDING',
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "currentPhase" TEXT,
     "currentAgent" TEXT,
     "progress" INTEGER NOT NULL DEFAULT 0,
@@ -226,10 +205,10 @@ CREATE TABLE "agent_runs" (
     "outputJson" JSONB,
     "confidence" DOUBLE PRECISION,
     "evidenceStrength" TEXT,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "latencyMs" INTEGER,
     "modelUsed" TEXT,
-    "toolsUsed" TEXT[],
+    "toolsUsed" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "errorMessage" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -248,20 +227,21 @@ CREATE TABLE "career_decisions" (
     "stabilityScore" DOUBLE PRECISION NOT NULL,
     "overallConfidence" DOUBLE PRECISION NOT NULL,
     "unsupportedClaimRate" DOUBLE PRECISION NOT NULL,
+    "evidenceCoverage" DOUBLE PRECISION NOT NULL,
     "agentAgreementRate" DOUBLE PRECISION NOT NULL,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "scoreDisclaimer" TEXT NOT NULL DEFAULT 'System-generated decision-support metrics based on configured scoring formulas. Not scientific probability assessments.',
-    "strengths" JSONB NOT NULL,
-    "skillGaps" JSONB NOT NULL,
-    "risks" JSONB NOT NULL,
-    "evidence" JSONB NOT NULL,
-    "alternativeCareers" JSONB NOT NULL,
-    "stressTestResults" JSONB NOT NULL,
-    "agentDisagreements" JSONB NOT NULL,
-    "assumptions" JSONB NOT NULL,
-    "uncertainties" JSONB NOT NULL,
-    "finalReasoning" TEXT NOT NULL,
-    "nextActions" JSONB NOT NULL,
+    "strengths" JSONB NOT NULL DEFAULT '[]',
+    "skillGaps" JSONB NOT NULL DEFAULT '[]',
+    "risks" JSONB NOT NULL DEFAULT '[]',
+    "evidence" JSONB NOT NULL DEFAULT '[]',
+    "alternativeCareers" JSONB NOT NULL DEFAULT '[]',
+    "stressTestResults" JSONB NOT NULL DEFAULT '[]',
+    "agentDisagreements" JSONB NOT NULL DEFAULT '[]',
+    "assumptions" JSONB NOT NULL DEFAULT '[]',
+    "uncertainties" JSONB NOT NULL DEFAULT '[]',
+    "finalReasoning" TEXT NOT NULL DEFAULT '',
+    "nextActions" JSONB NOT NULL DEFAULT '[]',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "career_decisions_pkey" PRIMARY KEY ("id")
@@ -279,7 +259,7 @@ CREATE TABLE "skill_gaps" (
     "priority" TEXT NOT NULL,
     "difficulty" TEXT,
     "dependency" TEXT,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "skill_gaps_pkey" PRIMARY KEY ("id")
@@ -296,7 +276,7 @@ CREATE TABLE "stress_tests" (
     "totalScenarios" INTEGER NOT NULL DEFAULT 10,
     "instabilityDetected" BOOLEAN NOT NULL DEFAULT false,
     "stabilityDelta" DOUBLE PRECISION,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "stress_tests_pkey" PRIMARY KEY ("id")
@@ -309,7 +289,7 @@ CREATE TABLE "stress_scenarios" (
     "scenarioId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "result" "ScenarioResult" NOT NULL,
+    "result" TEXT NOT NULL,
     "impact" TEXT NOT NULL,
     "scoreDelta" DOUBLE PRECISION NOT NULL,
     "reasoning" TEXT NOT NULL,
@@ -330,9 +310,9 @@ CREATE TABLE "risk_assessments" (
     "entryCompetition" DOUBLE PRECISION,
     "skillObsolescence" DOUBLE PRECISION,
     "geographicLimit" DOUBLE PRECISION,
-    "factors" JSONB NOT NULL,
-    "mitigations" JSONB NOT NULL,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "factors" JSONB NOT NULL DEFAULT '[]',
+    "mitigations" JSONB NOT NULL DEFAULT '[]',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "risk_assessments_pkey" PRIMARY KEY ("id")
@@ -349,7 +329,7 @@ CREATE TABLE "evidence" (
     "sourceType" TEXT,
     "confidence" DOUBLE PRECISION,
     "isSupported" BOOLEAN NOT NULL,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "evidence_pkey" PRIMARY KEY ("id")
@@ -381,13 +361,13 @@ CREATE TABLE "learning_plans" (
     "id" TEXT NOT NULL,
     "analysisId" TEXT NOT NULL,
     "career" TEXT NOT NULL,
-    "day30Plan" JSONB NOT NULL,
-    "day60Plan" JSONB NOT NULL,
-    "day90Plan" JSONB NOT NULL,
-    "month6Plan" JSONB NOT NULL,
-    "resources" JSONB NOT NULL,
+    "day30Plan" JSONB NOT NULL DEFAULT '{}',
+    "day60Plan" JSONB NOT NULL DEFAULT '{}',
+    "day90Plan" JSONB NOT NULL DEFAULT '{}',
+    "month6Plan" JSONB NOT NULL DEFAULT '{}',
+    "resources" JSONB NOT NULL DEFAULT '[]',
     "totalDuration" TEXT,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'DEMO',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "learning_plans_pkey" PRIMARY KEY ("id")
@@ -397,7 +377,7 @@ CREATE TABLE "learning_plans" (
 CREATE TABLE "progress" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "type" "ProgressType" NOT NULL,
+    "type" TEXT NOT NULL,
     "itemId" TEXT NOT NULL,
     "itemName" TEXT NOT NULL,
     "status" TEXT NOT NULL,
@@ -416,10 +396,10 @@ CREATE TABLE "job_applications" (
     "company" TEXT NOT NULL,
     "role" TEXT NOT NULL,
     "dateApplied" TIMESTAMP(3) NOT NULL,
-    "status" "ApplicationStatus" NOT NULL DEFAULT 'APPLIED',
+    "status" TEXT NOT NULL DEFAULT 'APPLIED',
     "jobUrl" TEXT,
     "jobDescription" TEXT,
-    "requiredSkills" TEXT[],
+    "requiredSkills" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "notes" TEXT,
     "salary" INTEGER,
     "location" TEXT,
@@ -456,10 +436,108 @@ CREATE TABLE "knowledge_documents" (
     "career" TEXT,
     "skill" TEXT,
     "reliability" TEXT NOT NULL,
-    "dataMode" "DataMode" NOT NULL DEFAULT 'CURATED',
+    "dataMode" TEXT NOT NULL DEFAULT 'CURATED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "knowledge_documents_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "simulations" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "baseAnalysisId" TEXT NOT NULL,
+    "scenarioType" TEXT NOT NULL,
+    "scenarioParams" JSONB NOT NULL DEFAULT '{}',
+    "originalScores" JSONB NOT NULL DEFAULT '{}',
+    "simulatedScores" JSONB NOT NULL DEFAULT '{}',
+    "rankingChanges" JSONB NOT NULL DEFAULT '[]',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "simulations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "copilot_conversations" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL DEFAULT 'Career Copilot',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "copilot_conversations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "copilot_messages" (
+    "id" TEXT NOT NULL,
+    "conversationId" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "intent" TEXT,
+    "toolsUsed" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "dataUsed" JSONB NOT NULL DEFAULT '[]',
+    "recommendations" JSONB NOT NULL DEFAULT '[]',
+    "actions" JSONB NOT NULL DEFAULT '[]',
+    "evidence" TEXT NOT NULL DEFAULT '[]',
+    "confidence" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
+    "limitations" JSONB NOT NULL DEFAULT '[]',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "copilot_messages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "progress_snapshots" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "snapshotDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "skills" JSONB NOT NULL DEFAULT '[]',
+    "careerReadiness" DOUBLE PRECISION NOT NULL,
+    "topCareer" TEXT,
+    "suitabilityScore" DOUBLE PRECISION,
+    "stressAdjustedScore" DOUBLE PRECISION,
+    "robustnessScore" DOUBLE PRECISION,
+    "rankingSnapshot" JSONB NOT NULL DEFAULT '[]',
+    "skillCoverage" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "learningProgress" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "projectEvidence" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "certEvidence" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "experienceFactor" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
+    "scoreDisclaimer" TEXT NOT NULL DEFAULT 'System-generated career readiness score — not scientific probability.',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "progress_snapshots_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "learning_milestones" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "analysisId" TEXT,
+    "career" TEXT,
+    "skill" TEXT,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "durationDays" INTEGER NOT NULL DEFAULT 7,
+    "phase" INTEGER NOT NULL DEFAULT 30,
+    "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+    "status" TEXT NOT NULL DEFAULT 'PLANNED',
+    "startedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
+    "skippedAt" TIMESTAMP(3),
+    "notes" TEXT,
+    "evidenceUrl" TEXT,
+    "completionEvidence" JSONB NOT NULL DEFAULT '{}',
+    "dataMode" TEXT NOT NULL DEFAULT 'DEMO',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "learning_milestones_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -582,6 +660,33 @@ CREATE INDEX "knowledge_documents_career_idx" ON "knowledge_documents"("career")
 -- CreateIndex
 CREATE INDEX "knowledge_documents_skill_idx" ON "knowledge_documents"("skill");
 
+-- CreateIndex
+CREATE INDEX "simulations_userId_idx" ON "simulations"("userId");
+
+-- CreateIndex
+CREATE INDEX "simulations_baseAnalysisId_idx" ON "simulations"("baseAnalysisId");
+
+-- CreateIndex
+CREATE INDEX "copilot_conversations_userId_idx" ON "copilot_conversations"("userId");
+
+-- CreateIndex
+CREATE INDEX "copilot_messages_conversationId_idx" ON "copilot_messages"("conversationId");
+
+-- CreateIndex
+CREATE INDEX "progress_snapshots_userId_idx" ON "progress_snapshots"("userId");
+
+-- CreateIndex
+CREATE INDEX "progress_snapshots_snapshotDate_idx" ON "progress_snapshots"("snapshotDate");
+
+-- CreateIndex
+CREATE INDEX "learning_milestones_userId_idx" ON "learning_milestones"("userId");
+
+-- CreateIndex
+CREATE INDEX "learning_milestones_status_idx" ON "learning_milestones"("status");
+
+-- CreateIndex
+CREATE INDEX "learning_milestones_career_idx" ON "learning_milestones"("career");
+
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -650,3 +755,21 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_userId_fkey" FOREIGN KEY ("u
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_analysisId_fkey" FOREIGN KEY ("analysisId") REFERENCES "analyses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "simulations" ADD CONSTRAINT "simulations_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "simulations" ADD CONSTRAINT "simulations_baseAnalysisId_fkey" FOREIGN KEY ("baseAnalysisId") REFERENCES "analyses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "copilot_conversations" ADD CONSTRAINT "copilot_conversations_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "copilot_messages" ADD CONSTRAINT "copilot_messages_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "copilot_conversations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "progress_snapshots" ADD CONSTRAINT "progress_snapshots_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "learning_milestones" ADD CONSTRAINT "learning_milestones_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

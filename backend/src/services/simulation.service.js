@@ -80,10 +80,10 @@ class SimulationService {
         userId,
         baseAnalysisId,
         scenarioType,
-        scenarioParams: JSON.stringify(scenarioParams),
-        originalScores: JSON.stringify(result.original_score != null ? { score: result.original_score } : (result.original || {})),
-        simulatedScores: JSON.stringify(result.new_score != null ? { score: result.new_score } : (result.simulated || {})),
-        rankingChanges: JSON.stringify(result.delta != null ? [{ role: 'Target Role', scoreDelta: result.delta, beforeScore: result.original_score, afterScore: result.new_score, rankingChange: 0 }] : (result.changes || [])),
+        scenarioParams: scenarioParams,
+        originalScores: result.original_score != null ? { score: result.original_score } : (result.original || {}),
+        simulatedScores: result.new_score != null ? { score: result.new_score } : (result.simulated || {}),
+        rankingChanges: result.delta != null ? [{ role: 'Target Role', scoreDelta: result.delta, beforeScore: result.original_score, afterScore: result.new_score, rankingChange: 0 }] : (result.changes || []),
         dataMode: (dataMode || 'DEMO').toUpperCase()
       }
     });
