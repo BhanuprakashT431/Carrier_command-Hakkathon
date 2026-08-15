@@ -1,24 +1,9 @@
 {
   "version": 2,
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "vite",
-      "buildCommand": "npm run build",
-      "installCommand": "npm install",
-      "outputDirectory": "dist",
-      "rewrites": [
-        { "source": "/(.*)", "destination": "/index.html" }
-      ]
-    },
-    "backend": {
-      "root": "backend",
-      "buildCommand": "npx prisma generate",
-      "installCommand": "npm install",
-      "entrypoint": "src/server.js",
-      "rewrites": [
-        { "source": "/(.*)", "destination": "/" }
-      ]
-    }
-  }
+  "buildCommand": "cd frontend && npm install && npm run build && cd ../backend && npm install && npx prisma generate",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/$1" }
+  ]
 }
