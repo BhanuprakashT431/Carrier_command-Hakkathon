@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -13,6 +15,10 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimit');
 const { sanitizeBody } = require('./middleware/sanitize');
 const logger = require('./utils/logger');
+
+// Path to the built frontend — served as a fallback in all deployment modes.
+// In Catalyst Advanced I/O (single-function), the frontend dist is copied here.
+const FRONTEND_DIST = path.resolve(__dirname, '../../frontend/dist');
 
 const app = express();
 
@@ -39,7 +45,7 @@ app.use(
 );
 
 // ============================================================
-// CORS — allow configured origins & Vercel deployment domains
+// CORS — allow configured origins & cloud deployment domains
 // ============================================================
 app.use(
   cors({
@@ -50,6 +56,11 @@ app.use(
       if (origin.startsWith('http://localhost:')) return callback(null, true);
       // Allow any vercel deployment
       if (origin.endsWith('.vercel.app')) return callback(null, true);
+      // Allow Zoho Catalyst deployments (all known Catalyst domains)
+      if (origin.endsWith('.zohocatalyst.com')) return callback(null, true);
+      if (origin.endsWith('.zohocatalystapp.com')) return callback(null, true);
+      // Allow Zoho Catalyst onslate.in CDN/app domain
+      if (origin.endsWith('.onslate.in')) return callback(null, true);
       if (env.CORS_ORIGINS.includes(origin)) return callback(null, true);
       
       logger.warn(`CORS rejected origin: ${origin}`);
@@ -112,15 +123,28 @@ if (env.isProduction) {
 app.use('/api', routes);
 
 // ============================================================
-// 404 handler
+// Frontend static files + SPA fallback
+// Serve the React build and fall through to index.html for
+// client-side routing.  Only active when the dist folder exists.
 // ============================================================
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.method} ${req.path} not found`,
-    timestamp: new Date().toISOString(),
+if (fs.existsSync(FRONTEND_DIST)) {
+  app.use(express.static(FRONTEND_DIST, { index: false }));
+
+  // SPA fallback: every non-/api GET returns index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIST, 'index.html'));
   });
-});
+  logger.info(`Serving frontend from: ${FRONTEND_DIST}`);
+} else {
+  // API-only mode (separate frontend deployment)
+  app.use((req, res) => {
+    res.status(404).json({
+      success: false,
+      message: `Route ${req.method} ${req.path} not found`,
+      timestamp: new Date().toISOString(),
+    });
+  });
+}
 
 // ============================================================
 // Global error handler (must be last)

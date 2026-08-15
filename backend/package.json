@@ -2,8 +2,9 @@
   "name": "career-command-center-backend",
   "version": "1.0.0",
   "description": "Secure AI Career Command Center — Node.js/Express Backend",
-  "main": "src/server.js",
+  "main": "index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test": "jest --runInBand --forceExit",

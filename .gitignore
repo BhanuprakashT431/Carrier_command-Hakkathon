@@ -112,3 +112,4 @@ jest-results.xml
 *.cert
 *.db
 *.db-journal
+.vercel

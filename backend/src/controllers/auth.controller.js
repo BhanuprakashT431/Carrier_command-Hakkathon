@@ -8,7 +8,10 @@ const env = require('../config/env');
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: env.isProduction,
-  sameSite: env.isProduction ? 'strict' : 'lax',
+  // Cross-origin: frontend and backend are on different Catalyst subdomains.
+  // Must use 'none' (with secure:true) so the browser sends the cookie cross-site.
+  // In development, 'lax' is fine since everything is localhost.
+  sameSite: env.isProduction ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   path: '/api/auth', // Scoped — only sent to auth endpoints
 };
@@ -135,7 +138,12 @@ async function logout(req, res, next) {
 
     await authService.logout(token);
 
-    res.clearCookie('refreshToken', { path: '/api/auth' });
+    res.clearCookie('refreshToken', {
+      path: '/api/auth',
+      httpOnly: true,
+      secure: env.isProduction,
+      sameSite: env.isProduction ? 'none' : 'lax',
+    });
 
     await createAuditLog({
       userId,
