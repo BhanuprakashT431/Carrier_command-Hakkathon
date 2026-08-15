@@ -1,4 +1,4 @@
-const { prisma } = require('../config/database');
+const prisma = require('../config/database');
 
 const INTENT_PATTERNS = {
   CAREER_QUESTION: ['why', 'recommend', 'score', 'suitability', 'robust', 'stress', 'career', 'rank'],
@@ -27,7 +27,36 @@ function detectIntent(userMessage) {
 }
 
 async function buildContext(userId) {
-  return { userId, info: "context summary mock" };
+  // Fetch actual data
+  const analysis = await prisma.analysis.findFirst({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    include: { careerDecision: true, skillGaps: true, riskAssessment: true }
+  });
+  
+  console.log("Copilot: About to fetch profile. prisma.profile =", typeof prisma.profile);
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+    include: { userSkills: true }
+  });
+  console.log("Copilot: Profile fetched.");
+
+  const learningPlan = analysis ? await prisma.learningPlan.findFirst({
+    where: { analysisId: analysis.id }
+  }) : null;
+
+  return {
+    userId,
+    data_mode: analysis ? analysis.dataMode : 'demo',
+    latest_analysis: analysis ? {
+      career: analysis.careerDecision?.career,
+      score: analysis.careerDecision?.suitabilityScore
+    } : {},
+    profile: profile || {},
+    skill_gaps: analysis?.skillGaps || [],
+    learning_plan: learningPlan ? { summary: learningPlan.totalDuration } : {},
+    evidence: []
+  };
 }
 
 function sanitizeInput(input) {

@@ -65,7 +65,7 @@ class ProfileService {
           const mapped = mappingFn ? mappingFn(rest) : rest;
           return { ...mapped, profileId: profile.id };
         });
-        await model.createMany({ data: cleanedData });
+        await model.createMany({ data: cleanedData, skipDuplicates: true });
       }
     };
 

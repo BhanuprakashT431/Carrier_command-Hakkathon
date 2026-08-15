@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { comparisonApi } from '../../services/comparison.api.js';
 import useAnalysisStore from '../../store/analysisStore.js';
 import { 
@@ -10,15 +10,30 @@ import {
   TrendingUp, 
   Search, 
   BookOpen, 
-  GraduationCap 
+  GraduationCap,
+  Network
 } from 'lucide-react';
 
 const Comparison = () => {
-  const { analysisId } = useAnalysisStore();
-  const [targetRoles, setTargetRoles] = useState(['Machine Learning Engineer', 'Data Scientist', 'Backend Developer']);
+  const { analysisId, fetchLatestAnalysis, decision } = useAnalysisStore();
+  const [targetRoles, setTargetRoles] = useState(['', '', '']);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!analysisId) {
+      fetchLatestAnalysis();
+    }
+  }, [analysisId, fetchLatestAnalysis]);
+
+  useEffect(() => {
+    if (decision?.alternativeCareers) {
+      const top3 = decision.alternativeCareers.slice(0, 3).map(c => c.career || c.title);
+      while (top3.length < 3) top3.push('');
+      setTargetRoles(top3);
+    }
+  }, [decision]);
 
   const handleRunComparison = async (e) => {
     e.preventDefault();
@@ -27,12 +42,18 @@ const Comparison = () => {
       return;
     }
 
+    const validRoles = targetRoles.filter(r => r.trim() !== '');
+    if (validRoles.length < 2) {
+      setError('Please provide at least 2 roles to compare.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setResult(null);
 
     try {
-      const res = await comparisonApi.runComparison({ analysisId, careers: targetRoles });
+      const res = await comparisonApi.runComparison({ analysisId, careers: validRoles });
       setResult({
         careers: res.data.comparison,
         recommendations: res.data.recommendations
@@ -54,12 +75,11 @@ const Comparison = () => {
   const DimensionConfig = {
     suitability: { icon: Target, label: 'Suitability Match', color: 'text-blue-500' },
     stressAdjusted: { icon: Activity, label: 'Stress Adjusted Score', color: 'text-rose-500' },
-    risk: { icon: ShieldAlert, label: 'Risk Assessment', color: 'text-amber-500' },
+    risk: { icon: ShieldAlert, label: 'Risk Score', color: 'text-amber-500' },
     robustness: { icon: ShieldCheck, label: 'Robustness', color: 'text-emerald-500' },
     stability: { icon: TrendingUp, label: 'Market Stability', color: 'text-indigo-500' },
-    evidence: { icon: Search, label: 'Evidence Quality', color: 'text-fuchsia-500' },
-    skillGap: { icon: BookOpen, label: 'Current Skill Gap', color: 'text-orange-500' },
-    learningEffort: { icon: GraduationCap, label: 'Learning Effort', color: 'text-teal-500' }
+    growthOpportunity: { icon: Search, label: 'Growth Opportunity', color: 'text-fuchsia-500' },
+    skillGap: { icon: BookOpen, label: 'Skill Gap Magnitude', color: 'text-orange-500' }
   };
 
   const MetricRow = ({ metricKey, isScore = false, invertColors = false }) => {
@@ -289,12 +309,11 @@ const Comparison = () => {
                 <div className="flex flex-col">
                   <MetricRow metricKey="suitability" isScore={true} />
                   <MetricRow metricKey="stressAdjusted" isScore={true} />
-                  <MetricRow metricKey="risk" invertColors={true} />
                   <MetricRow metricKey="robustness" isScore={true} />
                   <MetricRow metricKey="stability" isScore={true} />
-                  <MetricRow metricKey="evidence" />
-                  <MetricRow metricKey="skillGap" invertColors={true} />
-                  <MetricRow metricKey="learningEffort" invertColors={true} />
+                  <MetricRow metricKey="risk" isScore={true} invertColors={true} />
+                  <MetricRow metricKey="skillGap" isScore={false} invertColors={true} />
+                  <MetricRow metricKey="growthOpportunity" />
                 </div>
 
               </div>
@@ -313,6 +332,7 @@ const Comparison = () => {
              <p className="text-surface-400 max-w-md font-medium text-base">
                 Define up to 3 target roles above and deploy the agent swarm to compute a multi-dimensional comparative analysis.
              </p>
+             {error && <p className="text-rose-400 mt-4 bg-rose-500/10 p-2 rounded">{error}</p>}
           </div>
         )}
       </main>

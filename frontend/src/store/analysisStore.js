@@ -18,6 +18,37 @@ const useAnalysisStore = create(
 
       setDataMode: (mode) => set({ dataMode: mode }),
 
+      currentAnalysis: () => ({
+        analysisId: get().analysisId,
+        status: get().status,
+        results: get().results,
+        decision: get().decision,
+        learningRoadmap: get().learningRoadmap,
+        stressTest: get().stressTest,
+        evidence: get().evidence,
+        agentStatuses: get().agentStatuses,
+      }),
+
+      fetchLatestAnalysis: async () => {
+        try {
+          const res = await analysisApi.getLatestAnalysis();
+          if (res.data) {
+            const analysisId = res.data.id;
+            set({ analysisId, status: res.data.status, dataMode: res.data.dataMode });
+            
+            // If it's completed, fetch full sub-states
+            if (res.data.status === 'COMPLETED') {
+              get().fetchSubStates(analysisId);
+            } else if (res.data.status === 'PENDING' || res.data.status === 'RUNNING') {
+              // start polling
+              get().pollStatus(analysisId);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch latest analysis", err);
+        }
+      },
+
       runAnalysis: async (dataMode = 'LIVE') => {
         try {
           set({ status: 'PENDING', error: null, dataMode, results: null, agentStatuses: {} })

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { simulatorApi } from '../../services/simulator.api.js';
 import useAnalysisStore from '../../store/analysisStore.js';
 import { Network, Activity, Zap, Beaker, ArrowRight, TrendingUp, TrendingDown, Target, ShieldAlert } from 'lucide-react';
 
 const Simulator = () => {
-  const { analysisId } = useAnalysisStore();
+  const { analysisId, fetchLatestAnalysis } = useAnalysisStore();
   const [scenarioType, setScenarioType] = useState('Skill Improvement');
   const [skillName, setSkillName] = useState('');
   const [currentLevel, setCurrentLevel] = useState(20);
@@ -15,6 +15,12 @@ const Simulator = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!analysisId) {
+      fetchLatestAnalysis();
+    }
+  }, [analysisId, fetchLatestAnalysis]);
 
   const handleRunSimulation = async (e) => {
     e.preventDefault();

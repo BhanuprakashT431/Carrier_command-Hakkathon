@@ -304,6 +304,14 @@ class AnalysisService {
     return analysis;
   }
 
+  static async getLatestAnalysis(userId) {
+    const analysis = await prisma.analysis.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return analysis;
+  }
+
   static async getAnalysisResults(userId, analysisId) {
     const analysis = await prisma.analysis.findUnique({
       where: { id: analysisId, userId },

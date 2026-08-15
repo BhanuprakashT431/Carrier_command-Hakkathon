@@ -202,13 +202,13 @@ const Analysis = () => {
                <h2 className="text-xs font-bold uppercase tracking-widest text-primary-400 mb-2">Career Intelligence Report</h2>
                
                {/* Extract the top career for the report header */}
-               {decision?.finalRecommendations?.[0] && (
+               {decision && (
                  <div className="mt-8">
-                   <h3 className="text-4xl lg:text-5xl font-extrabold text-white mb-8">{decision.finalRecommendations[0].title}</h3>
+                   <h3 className="text-4xl lg:text-5xl font-extrabold text-white mb-8">{decision.career}</h3>
                    <div className="flex flex-wrap justify-center gap-6 lg:gap-12">
                      <div className="text-center">
                        <p className="text-[10px] uppercase tracking-widest text-surface-400 font-bold mb-2">Career Suitability</p>
-                       <p className="text-3xl font-bold text-emerald-400">{decision.finalRecommendations[0].stressAdjustedSuitability || decision.finalRecommendations[0].suitabilityScore}</p>
+                       <p className="text-3xl font-bold text-emerald-400">{decision.stressAdjustedScore || decision.suitabilityScore}</p>
                      </div>
                      <div className="w-px h-12 bg-surface-800 hidden sm:block"></div>
                      <div className="text-center">
@@ -218,7 +218,7 @@ const Analysis = () => {
                      <div className="w-px h-12 bg-surface-800 hidden sm:block"></div>
                      <div className="text-center">
                        <p className="text-[10px] uppercase tracking-widest text-surface-400 font-bold mb-2">Market Demand</p>
-                       <p className="text-3xl font-bold text-white">Strong</p>
+                       <p className="text-3xl font-bold text-white">{decision.riskScore < 30 ? 'Strong' : 'Medium'}</p>
                      </div>
                    </div>
                  </div>
@@ -234,7 +234,7 @@ const Analysis = () => {
                  <div className="bg-surface-900 border border-surface-800 rounded-2xl p-8">
                    <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-6">Why This Recommendation?</h4>
                    <ul className="space-y-4">
-                     {decision?.finalRecommendations?.[0]?.keyReasons?.map((reason, i) => (
+                     {decision?.strengths?.map((reason, i) => (
                        <li key={i} className="flex gap-3 text-surface-300">
                          <span className="shrink-0 w-6 h-6 rounded-full bg-primary-500/20 text-primary-400 flex items-center justify-center text-xs font-bold">{i+1}</span>
                          <span className="leading-relaxed">{reason}</span>
@@ -249,10 +249,16 @@ const Analysis = () => {
                      <Target className="w-5 h-5 text-rose-400" /> Critical Skill Gaps
                    </h4>
                    <div className="space-y-4">
-                     {learningRoadmap?.skillGaps?.map((gap, idx) => (
+                     {results?.skillGaps?.map((gap, idx) => (
                        <div key={idx} className="flex items-center justify-between border-b border-surface-800 pb-3 last:border-0 last:pb-0">
-                         <span className="font-semibold text-surface-200">{gap.skill}</span>
-                         <span className="text-xs bg-rose-500/10 text-rose-400 px-2 py-1 rounded font-bold uppercase tracking-wider">Required</span>
+                         <div>
+                           <span className="font-semibold text-surface-200 block">{gap.skillName}</span>
+                           <span className="text-xs text-surface-500">Current: {gap.currentLevel}/100 → Required: {gap.requiredLevel}/100</span>
+                         </div>
+                         <div className="flex flex-col items-end">
+                           <span className="text-xs bg-rose-500/10 text-rose-400 px-2 py-1 rounded font-bold uppercase tracking-wider">{gap.priority} Priority</span>
+                           <span className="text-[10px] text-surface-400 mt-1">Gap: {gap.gapSize}</span>
+                         </div>
                        </div>
                      ))}
                    </div>
@@ -265,11 +271,11 @@ const Analysis = () => {
                        <ShieldAlert className="w-5 h-5 text-amber-400" /> Top Career Risks
                      </h4>
                      <div className="space-y-4">
-                       {stressTest.scenarios?.filter(s => s.severity === 'High' || s.severity === 'Medium').slice(0, 3).map((sc, idx) => (
+                       {stressTest.scenarios?.filter(s => s.impact === 'High' || s.impact === 'Medium' || s.impact === 'HIGH' || s.impact === 'MEDIUM').slice(0, 3).map((sc, idx) => (
                          <div key={idx} className="p-4 bg-surface-800/50 rounded-xl border border-surface-700/50">
                            <div className="flex justify-between items-center mb-2">
                              <span className="font-bold text-surface-200">{sc.name}</span>
-                             <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${sc.severity === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}`}>{sc.severity} Risk</span>
+                             <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${sc.impact === 'HIGH' || sc.impact === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}`}>{sc.impact} Risk</span>
                            </div>
                            <p className="text-sm text-surface-400">{sc.reasoning}</p>
                          </div>
@@ -287,12 +293,12 @@ const Analysis = () => {
                      <Search className="w-5 h-5 text-indigo-400" /> Evidence Verification
                    </h4>
                    <div className="space-y-4">
-                     {evidence?.claims?.slice(0, 4).map((claim, idx) => (
+                     {Array.isArray(evidence) && evidence.slice(0, 4).map((claim, idx) => (
                        <div key={idx} className="flex items-start gap-3 bg-surface-800/30 p-4 rounded-xl border border-surface-700/30">
-                         {claim.status === 'Verified' ? <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> : <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
+                         {claim.isSupported ? <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" /> : <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
                          <div>
                            <p className="text-sm text-surface-200 mb-1">{claim.claim}</p>
-                           <p className="text-[10px] text-surface-500 uppercase tracking-wider font-bold">Source: {claim.source}</p>
+                           <p className="text-[10px] text-surface-500 uppercase tracking-wider font-bold">Source: {claim.source || 'Unknown'}</p>
                          </div>
                        </div>
                      ))}
@@ -304,10 +310,10 @@ const Analysis = () => {
                    <div className="bg-surface-900 border border-surface-800 rounded-2xl p-8">
                      <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-6">Immediate Next Actions</h4>
                      <div className="space-y-3">
-                       {learningRoadmap.timeline?.[0]?.goals?.slice(0, 3).map((goal, idx) => (
+                       {decision?.nextActions?.slice(0, 3).map((action, idx) => (
                          <div key={idx} className="flex items-center gap-4 bg-primary-500/10 border border-primary-500/20 p-4 rounded-xl group cursor-pointer hover:bg-primary-500/20 transition-colors">
                            <div className="w-8 h-8 rounded-full bg-primary-500/20 text-primary-400 flex items-center justify-center font-bold">{idx + 1}</div>
-                           <p className="text-sm text-white font-medium flex-1">{goal}</p>
+                           <p className="text-sm text-white font-medium flex-1">{action}</p>
                            <ArrowRight className="w-4 h-4 text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                          </div>
                        ))}

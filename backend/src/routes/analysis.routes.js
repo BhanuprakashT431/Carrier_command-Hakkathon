@@ -12,6 +12,9 @@ router.use(authenticate);
 // Run analysis
 router.post('/run', AnalysisController.runAnalysis);
 
+// Get latest analysis
+router.get('/latest', AnalysisController.getLatestAnalysis);
+
 // Get analysis status
 router.get('/:id/status', AnalysisController.getAnalysisStatus);
 

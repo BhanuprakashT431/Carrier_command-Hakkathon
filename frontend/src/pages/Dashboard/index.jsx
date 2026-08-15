@@ -12,7 +12,7 @@ const Dashboard = () => {
   const { user } = useAuthStore();
   const { profile } = useProfileStore();
   const { careerReadiness, loadReadiness } = useProgressStore();
-  const { currentAnalysis, fetchLatestAnalysis } = useAnalysisStore();
+  const { fetchLatestAnalysis, decision, results, learningRoadmap, status } = useAnalysisStore();
 
   const isProfileComplete = profile && profile.skills?.length > 0 && profile.preferences?.jobTitle;
 
@@ -24,20 +24,21 @@ const Dashboard = () => {
   }, [isProfileComplete, loadReadiness, fetchLatestAnalysis]);
 
   const targetRole = profile?.preferences?.jobTitle || 'N/A';
-  const readinessScore = careerReadiness?.score || 0;
+  const readinessScore = careerReadiness?.score || decision?.suitabilityScore || 0;
   
-  // Simple heuristic for strongest/weakest skill if analysis is present
-  const gaps = currentAnalysis?.skillGaps || [];
+  // Real skill gaps from backend results (if available)
+  const gaps = results?.skillGaps || decision?.skillGaps || [];
   let strongestSkill = "N/A";
   let biggestGap = "N/A";
   if (gaps.length > 0) {
     const sortedGaps = [...gaps].sort((a, b) => a.gapSize - b.gapSize);
-    strongestSkill = sortedGaps[0].skill;
-    biggestGap = sortedGaps[sortedGaps.length - 1].skill;
+    strongestSkill = sortedGaps[0].skillName || "N/A";
+    biggestGap = sortedGaps[sortedGaps.length - 1].skillName || "N/A";
   }
 
-  const marketSignal = currentAnalysis?.careerDecision?.alternativeCareers?.[0]?.risk_score < 30 ? 'Strong' : 'Medium';
-  const recommendedRole = currentAnalysis?.careerDecision?.alternativeCareers?.[0]?.career || targetRole;
+  const marketSignal = decision?.riskScore < 30 ? 'Strong' : (decision?.riskScore < 70 ? 'Medium' : 'Weak');
+  const recommendedRole = decision?.career || targetRole;
+  const nextActions = decision?.nextActions || [];
 
   return (
     <div className="w-full flex-1 flex flex-col bg-surface-50 dark:bg-[#080B14] transition-colors duration-300">
@@ -173,54 +174,25 @@ const Dashboard = () => {
             </div>
 
             {/* Next Best Actions */}
-            <div>
-              <h2 className="text-lg font-bold text-white mb-4">Next Best Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                <div className="bg-surface-900 border border-surface-800 hover:border-primary-500/50 transition-colors p-5 rounded-2xl flex flex-col justify-between group">
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-bold text-white group-hover:text-primary-400 transition-colors">Complete MLOps Fundamentals</h3>
-                      <span className="text-[10px] font-bold uppercase px-2 py-1 bg-surface-800 text-surface-300 rounded">3 hours</span>
+            {nextActions.length > 0 && (
+              <div>
+                <h2 className="text-lg font-bold text-white mb-4">Next Best Actions</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {nextActions.slice(0, 3).map((action, idx) => (
+                    <div key={idx} className="bg-surface-900 border border-surface-800 hover:border-primary-500/50 transition-colors p-5 rounded-2xl flex flex-col justify-between group">
+                      <div>
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-bold text-white group-hover:text-primary-400 transition-colors">{action}</h3>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-surface-800">
+                        <Link to="/progress" className="text-primary-400 hover:text-primary-300 font-semibold text-sm">Start &rarr;</Link>
+                      </div>
                     </div>
-                    <p className="text-sm text-surface-400 mb-4">Closes your largest critical skill gap identified by the Market Agent.</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-surface-800">
-                    <span className="text-sm font-bold text-emerald-400">+8% role readiness</span>
-                    <button className="text-primary-400 hover:text-primary-300 font-semibold text-sm">Start &rarr;</button>
-                  </div>
+                  ))}
                 </div>
-
-                <div className="bg-surface-900 border border-surface-800 hover:border-primary-500/50 transition-colors p-5 rounded-2xl flex flex-col justify-between group">
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-bold text-white group-hover:text-primary-400 transition-colors">Stress-Test Career Path</h3>
-                      <span className="text-[10px] font-bold uppercase px-2 py-1 bg-surface-800 text-surface-300 rounded">5 mins</span>
-                    </div>
-                    <p className="text-sm text-surface-400 mb-4">Run the "AI Automation" scenario to see how your target role holds up.</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-surface-800">
-                    <span className="text-sm font-bold text-primary-400">Reduce Risk</span>
-                    <Link to="/simulator" className="text-primary-400 hover:text-primary-300 font-semibold text-sm">Simulate &rarr;</Link>
-                  </div>
-                </div>
-
-                <div className="bg-surface-900 border border-surface-800 hover:border-primary-500/50 transition-colors p-5 rounded-2xl flex flex-col justify-between group">
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-bold text-white group-hover:text-primary-400 transition-colors">Review Evidence Gaps</h3>
-                      <span className="text-[10px] font-bold uppercase px-2 py-1 bg-surface-800 text-surface-300 rounded">15 mins</span>
-                    </div>
-                    <p className="text-sm text-surface-400 mb-4">The Evidence Agent flagged 2 unverified skills on your resume.</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-surface-800">
-                    <span className="text-sm font-bold text-amber-400">Improve Trust Score</span>
-                    <Link to="/analysis" className="text-primary-400 hover:text-primary-300 font-semibold text-sm">Review &rarr;</Link>
-                  </div>
-                </div>
-
               </div>
-            </div>
+            )}
 
           </div>
         )}

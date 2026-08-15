@@ -49,10 +49,9 @@ services:
       dockerfile: Dockerfile
     container_name: career_agents
     restart: unless-stopped
+    env_file:
+      - ./agents/.env
     environment:
-      DEMO_MODE: ${DEMO_MODE:-true}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-career_user}:${POSTGRES_PASSWORD:-career_secret}@postgres:5432/${POSTGRES_DB:-career_db}
       BACKEND_URL: http://backend:5000
     ports:
@@ -64,6 +63,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development
     container_name: career_frontend
     restart: unless-stopped
     environment:

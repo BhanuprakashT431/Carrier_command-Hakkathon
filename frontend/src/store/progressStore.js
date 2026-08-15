@@ -24,7 +24,7 @@ const useProgressStore = create((set) => ({
     set({ loading: true });
     try {
       const { data } = await progressApi.getSkillProgress();
-      set({ skillProgress: data.skills, loading: false });
+      set({ skillProgress: data || [], loading: false });
     } catch (error) {
       set({ loading: false });
     }

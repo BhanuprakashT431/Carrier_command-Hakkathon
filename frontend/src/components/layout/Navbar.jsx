@@ -66,10 +66,8 @@ export default function Navbar() {
         {/* Left: Logo */}
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white shadow-glow-primary group-hover:scale-105 transition-transform duration-300">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="flex items-center justify-center group-hover:scale-105 transition-transform duration-300 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-xl border border-primary-200 dark:border-primary-800 shadow-sm">
+              <span className="text-2xl" role="img" aria-label="Rocket Logo">🚀</span>
             </div>
             <span className="hidden sm:block font-bold text-surface-900 dark:text-white text-base tracking-tight group-hover:text-primary-600 transition-colors">
               Command Center

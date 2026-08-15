@@ -18,7 +18,7 @@ const useCopilotStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { data } = await copilotApi.getConversations();
-      set({ conversations: data.conversations, loading: false });
+      set({ conversations: data || [], loading: false });
     } catch (error) {
       set({ error: error.message, loading: false });
     }

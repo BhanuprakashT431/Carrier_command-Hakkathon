@@ -1,32 +1,93 @@
-import React, { useEffect } from 'react';
-
+import React, { useEffect, useRef, useState } from 'react';
 import useProgressStore from '../../store/progressStore';
-import { Target, TrendingUp, Activity, CheckCircle, Clock } from 'lucide-react';
+import useAnalysisStore from '../../store/analysisStore';
+import { Target, TrendingUp, Activity, CheckCircle, Clock, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const ProgressPage = () => {
   const { 
     careerReadiness, 
     skillProgress, 
-    milestones, 
-    weeklyPlan,
     loadReadiness,
-    loadSkillProgress,
-    loadMilestones,
-    loadWeeklyPlan,
-    completeMilestone
+    loadSkillProgress
   } = useProgressStore();
+
+  const { learningRoadmap, decision, results } = useAnalysisStore();
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     loadReadiness();
     loadSkillProgress();
-    loadMilestones();
-    loadWeeklyPlan();
-  }, [loadReadiness, loadSkillProgress, loadMilestones, loadWeeklyPlan]);
+  }, [loadReadiness, loadSkillProgress]);
 
-  const readiness = careerReadiness || { score: 0, breakdown: { skills: 0, learning: 0, projects: 0, certs: 0, experience: 0 } };
-  const skills = skillProgress || [];
+  const readiness = careerReadiness ? {
+    score: careerReadiness.careerReadiness || 0,
+    breakdown: {
+      skills: Math.round((careerReadiness.skillCoverage || 0) * 100),
+      learning: Math.round((careerReadiness.learningProgress || 0) * 100),
+      projects: Math.round((careerReadiness.projectEvidence || 0) * 100),
+      certs: Math.round((careerReadiness.certEvidence || 0) * 100),
+      experience: Math.round((careerReadiness.experienceFactor || 0) * 100)
+    }
+  } : { score: decision?.suitabilityScore || 0, breakdown: { skills: 0, learning: 0, projects: 0, certs: 0, experience: 0 } };
   
-  const isLoading = !careerReadiness && skills.length === 0 && !milestones;
+  // Use real skill gaps from analysis for "Skill Progress"
+  const skills = results?.skillGaps?.map(gap => ({
+    name: gap.skillName,
+    current: gap.currentLevel,
+    previous: gap.currentLevel, // placeholder
+    required: gap.requiredLevel
+  })) || skillProgress || [];
+
+  // Generate milestones from learningRoadmap
+  const milestones = [];
+  if (learningRoadmap) {
+    if (learningRoadmap.day30Plan?.goals) {
+      milestones.push({ phase: 'Day 30', title: 'Foundation & Core Skills', category: 'Phase 1', status: 'IN_PROGRESS', tasks: learningRoadmap.day30Plan.goals });
+    }
+    if (learningRoadmap.day60Plan?.goals) {
+      milestones.push({ phase: 'Day 60', title: 'Advanced Concepts & Applications', category: 'Phase 2', status: 'PLANNED', tasks: learningRoadmap.day60Plan.goals });
+    }
+    if (learningRoadmap.day90Plan?.goals) {
+      milestones.push({ phase: 'Day 90', title: 'Projects & Portfolio', category: 'Phase 3', status: 'PLANNED', tasks: learningRoadmap.day90Plan.goals });
+    }
+    if (learningRoadmap.month6Plan?.goals) {
+      milestones.push({ phase: 'Month 6', title: 'Interview & Market Readiness', category: 'Phase 4', status: 'PLANNED', tasks: learningRoadmap.month6Plan.goals });
+    }
+  }
+
+  const generatePDF = async () => {
+    const element = document.getElementById('roadmap-report');
+    if (!element) return;
+    setIsGenerating(true);
+    try {
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#080B14' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pdf.internal.pageSize.getHeight();
+
+      while (heightLeft >= 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+      }
+      
+      pdf.save('Career_Roadmap.pdf');
+    } catch (error) {
+      console.error('Error generating PDF', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="flex-1 w-full bg-[#080B14] transition-colors duration-300 min-h-screen pb-20">
@@ -37,10 +98,10 @@ const ProgressPage = () => {
         <div className="absolute top-60 left-0 w-[400px] h-[400px] bg-primary-500/10 blur-[120px] rounded-full mix-blend-lighten animate-blob animation-delay-2000" />
       </div>
 
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+      <main id="roadmap-report" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
         
         {/* Header */}
-        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-up">
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-up" data-html2canvas-ignore="false">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase tracking-widest mb-4 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
@@ -54,13 +115,25 @@ const ProgressPage = () => {
             </p>
           </div>
           
-          <button className="relative overflow-hidden group/btn bg-surface-900 border border-surface-800 text-white font-bold px-8 py-3 rounded-xl shadow-sm hover:border-primary-500/50 transition-all duration-300 w-fit">
-            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/20 to-primary-500/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Activity className="w-4 h-4 text-primary-400" />
-              Recalibrate
-            </span>
-          </button>
+          <div className="flex gap-3" data-html2canvas-ignore="true">
+            <button 
+              onClick={generatePDF}
+              disabled={isGenerating}
+              className="relative overflow-hidden group/btn bg-primary-600 border border-primary-500 text-white font-bold px-6 py-3 rounded-xl shadow-sm hover:bg-primary-500 transition-all duration-300 w-fit disabled:opacity-50"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Download className="w-4 h-4" />
+                {isGenerating ? 'Generating...' : 'Export PDF'}
+              </span>
+            </button>
+            <button className="relative overflow-hidden group/btn bg-surface-900 border border-surface-800 text-white font-bold px-6 py-3 rounded-xl shadow-sm hover:border-primary-500/50 transition-all duration-300 w-fit">
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/20 to-primary-500/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Activity className="w-4 h-4 text-primary-400" />
+                Recalibrate
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Section 1: Career Readiness Dashboard */}
@@ -253,7 +326,7 @@ const ProgressPage = () => {
             </div>
           </section>
 
-          {/* Section 4: Weekly Action Plan */}
+          {/* Section 4: Action Plan */}
           <section>
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
               <Clock className="w-5 h-5 text-amber-400" />
@@ -264,48 +337,24 @@ const ProgressPage = () => {
               
               <div className="flex justify-between items-center mb-8 border-b border-surface-800 pb-6">
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest font-bold text-surface-400 mb-1">Time Investment</div>
-                  <div className="text-surface-300 font-bold">This Week</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-extrabold text-white leading-none">{weeklyPlan?.totalScheduled || 0} <span className="text-surface-500 text-lg">/ {weeklyPlan?.weeklyHours || 5}</span></div>
-                  <div className="text-[10px] uppercase tracking-widest font-bold text-surface-400 mt-1">Hours Target</div>
+                  <div className="text-[10px] uppercase tracking-widest font-bold text-surface-400 mb-1">Current Focus</div>
+                  <div className="text-surface-300 font-bold">{learningRoadmap?.day30Plan?.focus || 'General Development'}</div>
                 </div>
               </div>
               
               <div className="space-y-4">
-                {weeklyPlan?.days?.map((dayObj, idx) => {
-                  const dayName = dayObj.day.substring(0, 3);
-                  const isToday = new Date().toLocaleDateString('en-US', { weekday: 'short' }) === dayName;
-                  
-                  return (
-                    <div key={dayObj.day} className="flex gap-4 group">
-                      <div className={`w-10 text-[11px] uppercase tracking-widest font-bold mt-3 ${isToday ? 'text-primary-400' : 'text-surface-500'}`}>
-                        {dayName}
-                      </div>
-                      <div className="flex-1">
-                        {dayObj.tasks.length > 0 ? dayObj.tasks.map((task, tIdx) => (
-                          <div key={tIdx} className={`rounded-xl p-4 text-sm font-semibold mb-2 border transition-all duration-300 ${
-                            isToday 
-                              ? 'bg-primary-900/20 border-primary-500/30 text-primary-100 shadow-[0_0_15px_rgba(168,85,247,0.1)]' 
-                              : 'bg-surface-950 border-surface-800 text-surface-300 group-hover:border-surface-600'
-                          }`}>
-                            <div className="flex justify-between items-center">
-                              <span>{task.title}</span>
-                              <span className={`text-[10px] font-bold px-2 py-1 rounded border ${
-                                isToday ? 'bg-primary-500/20 text-primary-300 border-primary-500/30' : 'bg-surface-900 text-surface-500 border-surface-800'
-                              }`}>{task.estimatedHours}H</span>
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="rounded-xl p-4 text-sm font-semibold mb-2 border bg-surface-950 border-surface-800 border-dashed text-surface-500/50">
-                            No tasks scheduled
-                          </div>
-                        )}
-                      </div>
+                {milestones.length > 0 ? milestones[0].tasks.map((task, tIdx) => (
+                  <div key={tIdx} className={`rounded-xl p-4 text-sm font-semibold mb-2 border transition-all duration-300 bg-primary-900/20 border-primary-500/30 text-primary-100 shadow-[0_0_15px_rgba(168,85,247,0.1)]`}>
+                    <div className="flex justify-between items-center">
+                      <span>{task}</span>
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded border bg-primary-500/20 text-primary-300 border-primary-500/30`}>Current</span>
                     </div>
-                  )
-                })}
+                  </div>
+                )) : (
+                  <div className="rounded-xl p-4 text-sm font-semibold mb-2 border bg-surface-950 border-surface-800 border-dashed text-surface-500/50">
+                    Run Career Analysis to generate your personalized roadmap.
+                  </div>
+                )}
               </div>
 
             </div>

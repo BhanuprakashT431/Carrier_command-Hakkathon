@@ -64,7 +64,7 @@ async def run_simulation_endpoint(request: SimulationRequest):
 @app.post("/api/copilot/message", response_model=CopilotResponse, tags=["copilot"])
 async def copilot_message(request: CopilotRequest):
     agent = CopilotAgent(app.state.provider)
-    return agent.run(request)
+    return await agent.run(request)
 
 
 if __name__ == "__main__":

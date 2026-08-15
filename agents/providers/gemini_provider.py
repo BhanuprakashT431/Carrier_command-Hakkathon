@@ -16,7 +16,7 @@ class GeminiProvider(AIProvider):
             import google.generativeai as genai
             if self.api_key:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-pro')
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
                 self.available = True
             else:
                 logger.warning("Gemini API key not provided. Falling back to DemoProvider.")
@@ -30,13 +30,23 @@ class GeminiProvider(AIProvider):
             return await self.fallback.generate(system_prompt, user_content, response_schema)
         
         try:
+            import google.generativeai as genai
             prompt = f"{system_prompt}\n\nUser Input:\n{user_content}"
             if response_schema:
                 prompt += f"\n\nPlease provide output in the following JSON schema:\n{json.dumps(response_schema)}"
             
-            response = self.model.generate_content(prompt)
-            # In a real impl, we'd clean Markdown formatting and parse JSON
-            return response.text
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(prompt)
+            
+            text = response.text
+            if text.startswith('```json'):
+                text = text[7:]
+            if text.startswith('```'):
+                text = text[3:]
+            if text.endswith('```'):
+                text = text[:-3]
+                
+            return text.strip()
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             return await self.fallback.generate(system_prompt, user_content, response_schema)

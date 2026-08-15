@@ -23,6 +23,19 @@ class AnalysisController {
     }
   }
 
+  static async getLatestAnalysis(req, res, next) {
+    try {
+      const AnalysisService = require('../services/analysis.service');
+      const latest = await AnalysisService.getLatestAnalysis(req.user.userId);
+      if (!latest) {
+        return success(res, null, 'No analysis found');
+      }
+      return success(res, latest, 'Latest analysis retrieved');
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async getAnalysisStatus(req, res, next) {
     try {
       const { id } = req.params;
