@@ -3,10 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Secure AI Career Command Center Monorepo",
-  "scripts": {
-    "vercel-build": "cd backend && npm install && npx prisma generate && cd ../frontend && npm install && npm run build",
-    "build": "cd backend && npm install && npx prisma generate && cd ../frontend && npm install && npm run build"
-  },
+  "scripts": {},
   "dependencies": {
     "@prisma/client": "^5.10.0",
     "axios": "^1.19.0",
